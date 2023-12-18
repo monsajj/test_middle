@@ -1,0 +1,44 @@
+Зайцев Денис Андреевич
+d.zaitsev@urancompany.com
+
+1. Facebook API
+Используя https://developers.facebook.com/docs/messenger-platform/send-api-reference
+создать простого бота для Facebook Messenger который имеет следующий функционал:
+
+После первой фразы приветствует пользователя - Hello {name from Facebook Public Profile} ,
+отвечает на любую фразу - You wrote: {text},
+все сообщения(текст, медиа и прочее) - логируются в базу(MongoDB к примеру),
+при отправке сообщении last phrase возвращает последнее сообщения пользователя(которое было до этого).
+
+Используйте стандарт ES6.
+Решение должно работать с помощью Webhook https://developers.facebook.com/docs/messenger-platform/webhook-reference
+Не допускается использование какого либо Bot Framework.
+Архитектура должна подразумевать расширение функционала при необходимости.
+
+2. MVC
+Напишите простейшую связку Контроллер-Модель, для сайта только со страницами (т.е. у него одна таблица в базе pages:id, friendly, title, description), где выдача идет без шаблона тк у нас будет для дизайна использоваться фронтенд.
+Напишите тесты к связке в целом.
+
+3. Code review
+/*
+ * опишите что этот код делает и можно ли его улучшить
+ * заметьте - это Postgresql - предположительно не знакомая вам база данных и вам нужно почитать документацию прежде чем ответить
+ */
+
+
+for($i = 0; $i<10000000; $i++) {
+	$result = DB::query('
+		CREATE TEMPORARY TABLE tmp1 AS SELECT u.id
+			FROM public.users AS u
+			INNER JOIN public.user_requests AS o ON (o.id_user = u.id)
+			WHERE (u.mark IS NULL OR u.mark<4)
+        	AND o.status IN (1,2) LIMIT 100');
+	$result_count = DB::query('SELECT COUNT(*) INTO return_count FROM tmp1', 'one');
+	$result = DB::query('
+		UPDATE public.users SET mark= 4
+    		FROM (SELECT id FROM tmp1) AS subquery
+    		WHERE public.users.id = subquery.id');
+	$result = DB::query('DROP TABLE tmp1');
+	if ($result_count < 100) break;
+	//echo $i . ' ';
+}
