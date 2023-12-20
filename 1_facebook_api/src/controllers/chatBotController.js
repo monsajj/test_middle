@@ -1,35 +1,28 @@
 require("dotenv").config();
 import request from "request";
 import axios from "axios";
-// const { Client } = require('pg')
-// const client = new Client({
-//     connectionString: process.env.DATABASE_URL,
-//     ssl: {
-//         rejectUnauthorized: false
-//     }
-// });
-//
-// client.connect();
+const {getLastMessageByPsid, saveNewMessage} = require("../config/db");
+
 let postWebhook = (req, res) => {
     // Parse the request body from the POST
     let body = req.body;
-
     // Check the webhook event is from a Page subscription
     if (body.object === 'page') {
         // Iterate over each entry - there may be multiple if batched
         body.entry.forEach(function(entry) {
             // Gets the body of the webhook event
             let webhook_event = entry.messaging[0];
-            // console.log(webhook_event);
-
             // Get the sender PSID
             let sender_psid = webhook_event.sender.id;
-            console.log('Sender PSID: ' + sender_psid);
+            // console.log('Sender PSID: ' + sender_psid);
 
-            // Check if the event is a message or postback and
-            // pass the event to the appropriate handler function
+            // Check if the event is a message or postback and pass the event to the appropriate handler function
             if (webhook_event.message) {
-                handleMessage(sender_psid, webhook_event.message);
+                try {
+                    handleMessage(sender_psid, webhook_event.message);
+                } catch (error) {
+                    console.error(error);
+                }
             } else if (webhook_event.postback) {
                 handlePostback(sender_psid, webhook_event.postback);
             }
@@ -56,7 +49,7 @@ let getWebhook = (req, res) => {
         // Checks the mode and token sent is correct
         if (mode === 'subscribe' && token === VERIFY_TOKEN) {
             // Responds with the challenge token from the request
-            console.log('WEBHOOK_VERIFIED');
+            // console.log('WEBHOOK_VERIFIED');
             res.status(200).send(challenge);
         } else {
             // Responds with '403 Forbidden' if verify tokens do not match
@@ -68,10 +61,19 @@ let getWebhook = (req, res) => {
 // Handles messages events
 async function handleMessage(sender_psid, received_message) {
     let response;
+    let lastMessage = await getLastMessageByPsid(sender_psid)
+    let newMessageData = {
+        psid: sender_psid,
+        text: null,
+        media: null
+    }
+    if (received_message.text)
+        newMessageData.text = received_message.text
+    if (received_message.attachments)
+        newMessageData.media = received_message.attachments[0].payload.url
 
     //Check in db if the message first one for this psid
-    //todo Так как я не смог нормально подключить запросы в базу то тут проверка на то что сообщение равно "Hi"
-    if (received_message.text && received_message.text === "Hi") {
+    if (!lastMessage) {
         let name = await getUserName(received_message.mid, process.env.FB_PAGE_TOKEN)
         response = {
             "text": `Hello ${name}!`
@@ -81,25 +83,31 @@ async function handleMessage(sender_psid, received_message) {
         await new Promise(resolve => setTimeout(resolve, 600));
     }
 
-    // Check if the message contains text
-    if (received_message.text) {
+    if (received_message.text && received_message.text === "last phrase" && lastMessage) {
+        if (lastMessage.text) {
+            response = {
+                "text": `Last message: ${lastMessage.text}`
+            }
+        }
+        if (lastMessage.media) {
+            response = {
+                "attachment": {
+                    "type": "template",
+                    "payload": {
+                        "template_type": "generic",
+                        "elements": [{
+                            "title": "Your last message",
+                            "image_url": lastMessage.media,
+                        }]
+                    }
+                }
+            }
+        }
+    } else if (received_message.text) { // Check if the message contains text
         // Create the payload for a basic text message
-        //todo Так как я не смог нормально подключить запросы в базу то тут такое же копирование последнего сообщения, только меняется комментарий бота.
-        if (received_message.text === "last phrase")
-            response = {
-                "text": `Last message: ${received_message.text}`
-            }
-        else
-            response = {
-                "text": `You wrote: ${received_message.text}`
-            }
-        // client.query('INSERT INTO public.messages (psid, text, media) VALUES ($1, $2, $3);', [sender_psid, received_message.text, 'media'], (err, res) => {
-        //     if (err) throw err;
-        //     for (let row of res.rows) {
-        //         console.log(JSON.stringify(row));
-        //     }
-        //     client.end();
-        // });
+        response = {
+            "text": `You wrote: ${received_message.text}`
+        }
     } else if (received_message.attachments) {
         // Gets the URL of the message attachment
         let attachment_url = received_message.attachments[0].payload.url;
@@ -117,6 +125,9 @@ async function handleMessage(sender_psid, received_message) {
         }
     }
 
+    // Saves the new message if it from user
+    if (sender_psid !== '111889201629911')
+        saveNewMessage(newMessageData)
     // Sends the response message
     callSendAPI(sender_psid, response);
 }
