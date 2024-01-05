@@ -8,7 +8,7 @@ class Bootstrap
             $tokens = explode('/', rtrim($_GET['path'], '/'));
 
             // 2. Dispatcher
-            $controllerName = ucfirst(array_shift($tokens));
+            $controllerName = ucfirst(array_shift($tokens)) . 'Controller';
             if (file_exists('controllers/'.$controllerName.'.php')) {
                 $controller = new $controllerName();
                 if (!empty($tokens)) {
@@ -42,7 +42,7 @@ class Bootstrap
 
         //Error404 page
         if ( $flag ) {
-            $controllerName = 'Error404';
+            $controllerName = 'Error404Controller';
             $controller = new $controllerName();
             $controller->index();
         }

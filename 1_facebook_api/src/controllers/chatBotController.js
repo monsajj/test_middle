@@ -1,19 +1,20 @@
-require("dotenv").config();
+import 'dotenv/config';
 import request from "request";
 import axios from "axios";
-const {getLastMessageByPsid, saveNewMessage} = require("../config/db");
+import {getLastMessageByPsid, saveNewMessage} from "../config/db";
 
-let postWebhook = (req, res) => {
+const postWebhook = (req, res) => {
+    console.log('postWebhook')
     // Parse the request body from the POST
-    let body = req.body;
+    const body = req.body;
     // Check the webhook event is from a Page subscription
     if (body.object === 'page') {
         // Iterate over each entry - there may be multiple if batched
         body.entry.forEach(function(entry) {
             // Gets the body of the webhook event
-            let webhook_event = entry.messaging[0];
+            const webhook_event = entry.messaging[0];
             // Get the sender PSID
-            let sender_psid = webhook_event.sender.id;
+            const sender_psid = webhook_event.sender.id;
             // console.log('Sender PSID: ' + sender_psid);
 
             // Check if the event is a message or postback and pass the event to the appropriate handler function
@@ -23,35 +24,38 @@ let postWebhook = (req, res) => {
                 } catch (error) {
                     console.error(error);
                 }
-            } else if (webhook_event.postback) {
-                handlePostback(sender_psid, webhook_event.postback);
             }
         });
         // Return a '200 OK' response to all events
         res.status(200).send('EVENT_RECEIVED');
     } else {
+        console.log('postWebhook res.sendStatus(404);')
         // Return a '404 Not Found' if event is not from a page subscription
         res.sendStatus(404);
     }
 };
 
-let getWebhook = (req, res) => {
+const getWebhook = (req, res) => {
+    console.log('getWebhook')
     // Your verify token. Should be a random string.
-    let VERIFY_TOKEN = process.env.MY_VERIFY_FB_TOKEN;
+    const VERIFY_TOKEN = process.env.MY_VERIFY_FB_TOKEN;
 
     // Parse the query params
-    let mode = req.query['hub.mode'];
-    let token = req.query['hub.verify_token'];
-    let challenge = req.query['hub.challenge'];
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
 
     // Checks if a token and mode is in the query string of the request
     if (mode && token) {
+        console.log('if (mode && token)')
         // Checks the mode and token sent is correct
         if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+            console.log('if (mode subscribe && token VERIFY_TOKEN)')
             // Responds with the challenge token from the request
             // console.log('WEBHOOK_VERIFIED');
             res.status(200).send(challenge);
         } else {
+            console.log('if else')
             // Responds with '403 Forbidden' if verify tokens do not match
             res.sendStatus(403);
         }
@@ -59,9 +63,13 @@ let getWebhook = (req, res) => {
 };
 
 // Handles messages events
-async function handleMessage(sender_psid, received_message) {
+const handleMessage = async (sender_psid, received_message) => {
+    console.log('PSID: ')
+    console.log(sender_psid)
+    console.log('message')
+    console.log(received_message)
     let response;
-    let lastMessage = await getLastMessageByPsid(sender_psid)
+    const lastMessage = await getLastMessageByPsid(sender_psid)
     let newMessageData = {
         psid: sender_psid,
         text: null,
@@ -74,12 +82,12 @@ async function handleMessage(sender_psid, received_message) {
 
     //Check in db if the message first one for this psid
     if (!lastMessage) {
-        let name = await getUserName(received_message.mid, process.env.FB_PAGE_TOKEN)
+        const name = await getUserName(received_message.mid, process.env.FB_PAGE_TOKEN)
         response = {
             "text": `Hello ${name}!`
         }
         // Sends the response message
-        callSendAPI(sender_psid, response);
+        await callSendAPI(sender_psid, response);
         await new Promise(resolve => setTimeout(resolve, 600));
     }
 
@@ -110,7 +118,7 @@ async function handleMessage(sender_psid, received_message) {
         }
     } else if (received_message.attachments) {
         // Gets the URL of the message attachment
-        let attachment_url = received_message.attachments[0].payload.url;
+        const attachment_url = received_message.attachments[0].payload.url;
         response = {
             "attachment": {
                 "type": "template",
@@ -126,16 +134,16 @@ async function handleMessage(sender_psid, received_message) {
     }
 
     // Saves the new message if it from user
-    if (sender_psid !== '111889201629911')
+    if (sender_psid !== process.env.FB_APP_PSID)
         saveNewMessage(newMessageData)
     // Sends the response message
-    callSendAPI(sender_psid, response);
+    await callSendAPI(sender_psid, response);
 }
 
 // Sends response messages via the Send API
-function callSendAPI(sender_psid, response) {
+const callSendAPI = async (sender_psid, response) => {
     // Construct the message body
-    let request_body = {
+    const request_body = {
         "recipient": {
             "id": sender_psid
         },
@@ -157,11 +165,11 @@ function callSendAPI(sender_psid, response) {
     });
 }
 
-async function getUserName(messageId, fbToken) {
-    let url = `https://graph.facebook.com/${messageId}?fields=from&access_token=${fbToken}`;
-    let userName = await axios.get(url)
+const getUserName = async (messageId, fbToken) => {
+    const url = `https://graph.facebook.com/${messageId}?fields=from&access_token=${fbToken}`;
+    const userName = await axios.get(url)
         .then(result => {
-            let name = result.data.from.name
+            const name = result.data.from.name
             console.log(name);
             return name;
         })

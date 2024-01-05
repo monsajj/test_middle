@@ -1,6 +1,6 @@
-const { Client } = require('pg')
+import { Client } from 'pg'
 const tableName = 'public.messages'
-let client = new Client({
+const client = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
@@ -9,7 +9,7 @@ let client = new Client({
 
 client.connect();
 
-async function getLastMessageByPsid(psid) {
+const getLastMessageByPsid = async (psid) => {
     let res = await client.query(`SELECT * FROM ${tableName} WHERE psid = '${psid}' ORDER BY id DESC LIMIT 1`);
     let lastMessage = res.rows[0]
     if (lastMessage)
@@ -21,7 +21,7 @@ async function getLastMessageByPsid(psid) {
         return null
 }
 
-async function saveNewMessage(data) {
+const saveNewMessage = async (data) => {
     let res = await client.query(`INSERT INTO ${tableName} (psid, text, media) VALUES ($1, $2, $3) RETURNING *;`, [data.psid, data.text, data.media]);
     if (res.rows)
         return res.rows[0]

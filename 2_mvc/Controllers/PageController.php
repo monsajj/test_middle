@@ -12,13 +12,14 @@ class PageController
         return true;
     }
 
-    public function getPage($id) {
+    public function get($id) {
         $id = intval($id);
         $page = Page::find($id);
-        if ($page)
-            var_dump($page);
-        else
-            echo "404 Page not found";
+        if (!$page) {
+            header("Location: /Error404Controller");
+            die();
+        }
+        var_dump($page);
         return true;
     }
 
@@ -30,41 +31,44 @@ class PageController
             'description' => 'updated description',
         ];
         $page = Page::create($request);
-        if ($page)
-            var_dump($page);
-        else
-            echo "404 Page not found";
+        if (!$page) {
+            header("Location: /Error404Controller");
+            die();
+        }
+        var_dump($page);
         return true;
     }
 
     public function updatePage($id, $request) {
         $id = intval($id);
         $page = Page::find($id);
-        if ($page) {
-            //should be validation here but for tests we just set data instead request
-            $request = [
-                'id' => $id,
-                'title' => 'updated title',
-                'friendly' => 'true',
-                'description' => 'new updated description',
-            ];
-            $page = Page::update($id, $request);
-            var_dump($page);
-        } else
-            echo "404 Page not found";
+        if (!$page) {
+            header("Location: /Error404Controller");
+            die();
+        }
+        //should be validation here but for tests we just set data instead request
+        $request = [
+            'id' => $id,
+            'title' => 'updated title',
+            'friendly' => 'true',
+            'description' => 'new updated description',
+        ];
+        $page = Page::update($id, $request);
+        var_dump($page);
         return true;
     }
 
     public function deletePage($id) {
         $id = intval($id);
         $page = Page::find($id);
-        if ($page)
-            if (Page::delete($id))
-                echo 'success';
-            else
-                echo 'error';
+        if (!$page) {
+            header("Location: /Error404Controller");
+            die();
+        }
+        if (Page::delete($id))
+            echo 'success';
         else
-            echo "404 Page not found";
+            echo 'error';
         return true;
     }
 }
