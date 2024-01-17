@@ -4,7 +4,6 @@ import axios from "axios";
 import {getLastMessageByPsid, saveNewMessage} from "../config/db";
 
 const postWebhook = (req, res) => {
-    console.log('postWebhook')
     // Parse the request body from the POST
     const body = req.body;
     // Check the webhook event is from a Page subscription
@@ -29,14 +28,12 @@ const postWebhook = (req, res) => {
         // Return a '200 OK' response to all events
         res.status(200).send('EVENT_RECEIVED');
     } else {
-        console.log('postWebhook res.sendStatus(404);')
         // Return a '404 Not Found' if event is not from a page subscription
         res.sendStatus(404);
     }
 };
 
 const getWebhook = (req, res) => {
-    console.log('getWebhook')
     // Your verify token. Should be a random string.
     const VERIFY_TOKEN = process.env.MY_VERIFY_FB_TOKEN;
 
@@ -47,15 +44,12 @@ const getWebhook = (req, res) => {
 
     // Checks if a token and mode is in the query string of the request
     if (mode && token) {
-        console.log('if (mode && token)')
         // Checks the mode and token sent is correct
         if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-            console.log('if (mode subscribe && token VERIFY_TOKEN)')
             // Responds with the challenge token from the request
             // console.log('WEBHOOK_VERIFIED');
             res.status(200).send(challenge);
         } else {
-            console.log('if else')
             // Responds with '403 Forbidden' if verify tokens do not match
             res.sendStatus(403);
         }
@@ -64,10 +58,6 @@ const getWebhook = (req, res) => {
 
 // Handles messages events
 const handleMessage = async (sender_psid, received_message) => {
-    console.log('PSID: ')
-    console.log(sender_psid)
-    console.log('message')
-    console.log(received_message)
     let response;
     const lastMessage = await getLastMessageByPsid(sender_psid)
     let newMessageData = {
@@ -77,7 +67,7 @@ const handleMessage = async (sender_psid, received_message) => {
     }
     if (received_message.text)
         newMessageData.text = received_message.text
-    if (received_message.attachments)
+    if (received_message.attachments && received_message.attachments[0])
         newMessageData.media = received_message.attachments[0].payload.url
 
     //Check in db if the message first one for this psid
@@ -118,7 +108,9 @@ const handleMessage = async (sender_psid, received_message) => {
         }
     } else if (received_message.attachments) {
         // Gets the URL of the message attachment
-        const attachment_url = received_message.attachments[0].payload.url;
+        let attachment_url = ''
+        if (received_message && received_message.attachments[0])
+            attachment_url = received_message.attachments[0].payload.url;
         response = {
             "attachment": {
                 "type": "template",
