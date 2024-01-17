@@ -106,11 +106,9 @@ const handleMessage = async (sender_psid, received_message) => {
         response = {
             "text": `You wrote: ${received_message.text}`
         }
-    } else if (received_message.attachments) {
+    } else if (received_message.attachments && received_message.attachments[0]) {
         // Gets the URL of the message attachment
-        let attachment_url = ''
-        if (received_message && received_message.attachments[0])
-            attachment_url = received_message.attachments[0].payload.url;
+        let attachment_url = received_message.attachments[0].payload.url;
         response = {
             "attachment": {
                 "type": "template",
