@@ -67,7 +67,7 @@ const handleMessage = async (sender_psid, received_message) => {
     }
     if (received_message.text)
         newMessageData.text = received_message.text
-    if (received_message.attachments && received_message.attachments[0])
+    if (received_message.attachments && received_message.attachments.length > 0)
         newMessageData.media = received_message.attachments[0].payload.url
 
     //Check in db if the message first one for this psid
@@ -106,7 +106,7 @@ const handleMessage = async (sender_psid, received_message) => {
         response = {
             "text": `You wrote: ${received_message.text}`
         }
-    } else if (received_message.attachments && received_message.attachments[0]) {
+    } else if (received_message.attachments && received_message.attachments.length > 0) {
         // Gets the URL of the message attachment
         let attachment_url = received_message.attachments[0].payload.url;
         response = {
