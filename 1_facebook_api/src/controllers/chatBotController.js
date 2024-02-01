@@ -1,9 +1,8 @@
 import 'dotenv/config';
-import request from "request";
 import axios from "axios";
 import {getLastMessageByPsid, saveNewMessage} from "../config/db";
 
-const postWebhook = (req, res) => {
+export const postWebhook = (req, res) => {
     // Parse the request body from the POST
     const body = req.body;
     // Check the webhook event is from a Page subscription
@@ -14,7 +13,6 @@ const postWebhook = (req, res) => {
             const webhook_event = entry.messaging[0];
             // Get the sender PSID
             const sender_psid = webhook_event.sender.id;
-            // console.log('Sender PSID: ' + sender_psid);
 
             // Check if the event is a message or postback and pass the event to the appropriate handler function
             if (webhook_event.message) {
@@ -28,12 +26,13 @@ const postWebhook = (req, res) => {
         // Return a '200 OK' response to all events
         res.status(200).send('EVENT_RECEIVED');
     } else {
+        console.log('postWebhook res.sendStatus(404);')
         // Return a '404 Not Found' if event is not from a page subscription
         res.sendStatus(404);
     }
 };
 
-const getWebhook = (req, res) => {
+export const getWebhook = (req, res) => {
     // Your verify token. Should be a random string.
     const VERIFY_TOKEN = process.env.MY_VERIFY_FB_TOKEN;
 
@@ -139,38 +138,21 @@ const callSendAPI = async (sender_psid, response) => {
         },
         "message": { "text": response.text, "attachment": response.attachment }
     };
-
-    // Send the HTTP request to the Messenger Platform
-    request({
-        "uri": "https://graph.facebook.com/v18.0/me/messages",
-        "qs": { "access_token": process.env.FB_PAGE_TOKEN },
-        "method": "POST",
-        "json": request_body
-    }, (err, res, body) => {
-        if (!err) {
-            console.log('message sent!');
-        } else {
-            console.error("Unable to send message:" + err);
-        }
-    });
+    const url = `https://graph.facebook.com/v18.0/me/messages?access_token=${process.env.FB_PAGE_TOKEN}`;
+    await axios.post(url, request_body)
+        .catch(error => {
+            console.log(error)
+            return false;
+        })
+    return true
 }
 
 const getUserName = async (messageId, fbToken) => {
     const url = `https://graph.facebook.com/${messageId}?fields=from&access_token=${fbToken}`;
-    const userName = await axios.get(url)
-        .then(result => {
-            const name = result.data.from.name
-            console.log(name);
-            return name;
-        })
+    const response = await axios.get(url)
         .catch(error => {
             console.log(error)
             return '???';
         })
-    return userName;
+    return response.data.from.name;
 }
-
-module.exports = {
-    postWebhook: postWebhook,
-    getWebhook: getWebhook
-};

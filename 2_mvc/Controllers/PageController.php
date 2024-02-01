@@ -3,72 +3,95 @@
 class PageController
 {
     public function index() {
-        $pages = Page::all();
-        //for tests instead return data to view
-        foreach ($pages as $page) {
-            var_dump($page);
-            echo '<br>';
+        try {
+            $pages = Page::all();
+        } catch (Exception $exception) {
+            echo $exception->getMessage();
+            return json_encode(['message' => $exception->getMessage(), 'data' => null]);
         }
-        return true;
+        // echo instead return - to view data for tests
+//        echo json_encode(['message' => 'success', 'data' => $pages]);
+        return json_encode(['message' => 'success', 'data' => $pages]);
     }
 
     public function get($id) {
-        $id = intval($id);
-        $page = Page::find($id);
-        if (!$page) {
-            header("Location: /Error404Controller");
-            die();
+        try {
+            $id = intval($id);
+            $page = Page::find($id);
+            if (!$page) {
+                throw new Exception('Page not found');
+            }
+        } catch (Exception $exception) {
+            echo $exception->getMessage();
+            return json_encode(['message' => $exception->getMessage(), 'data' => null]);
         }
-        var_dump($page);
-        return true;
+        // echo instead return - to view data for tests
+//        echo json_encode(['message' => 'success', 'data' => $page]);
+        return json_encode(['message' => 'success', 'data' => $page]);
     }
 
     public function createPage($request) {
-        //should be validation here but for tests we just set data instead request
-        $request = [
-            'title' => 'another updated title',
-            'friendly' => 'true',
-            'description' => 'updated description',
-        ];
-        $page = Page::create($request);
-        if (!$page) {
-            header("Location: /Error404Controller");
-            die();
+        try {
+            //should be validation here but for tests we just set data instead request
+            $request = [
+                'title' => 'another updated title',
+                'friendly' => 'true',
+                'description' => 'updated description',
+            ];
+            $page = Page::create($request);
+            if (!$page) {
+                throw new Exception('Page not created');
+            }
+        } catch (Exception $exception) {
+            echo $exception->getMessage();
+            return json_encode(['message' => $exception->getMessage(), 'data' => null]);
         }
-        var_dump($page);
-        return true;
+        // echo instead return - to view data for tests
+//        echo json_encode(['message' => 'success', 'data' => $page]);
+        return json_encode(['message' => 'success', 'data' => $page]);
     }
 
     public function updatePage($id, $request) {
-        $id = intval($id);
-        $page = Page::find($id);
-        if (!$page) {
-            header("Location: /Error404Controller");
-            die();
+        try {
+            $id = intval($id);
+            $page = Page::find($id);
+            if (!$page) {
+                throw new Exception('Page not created');
+            }
+            //should be validation here but for tests we just set data instead request
+            $request = [
+                'id' => $id,
+                'title' => 'updated title',
+                'friendly' => 'true',
+                'description' => 'new updated description',
+            ];
+            $page = Page::update($id, $request);
+        } catch (Exception $exception) {
+            echo $exception->getMessage();
+            return json_encode(['message' => $exception->getMessage(), 'data' => null]);
         }
-        //should be validation here but for tests we just set data instead request
-        $request = [
-            'id' => $id,
-            'title' => 'updated title',
-            'friendly' => 'true',
-            'description' => 'new updated description',
-        ];
-        $page = Page::update($id, $request);
-        var_dump($page);
-        return true;
+        // echo instead return - to view data for tests
+//        echo json_encode(['message' => 'success', 'data' => $page]);
+        return json_encode(['message' => 'success', 'data' => $page]);
     }
 
     public function deletePage($id) {
-        $id = intval($id);
-        $page = Page::find($id);
-        if (!$page) {
-            header("Location: /Error404Controller");
-            die();
+
+        try {
+
+            $id = intval($id);
+            $page = Page::find($id);
+
+            if (!$page) {
+                throw new Exception('Page not found');
+            }
+            Page::delete($id);
+        } catch (Exception $exception) {
+            echo $exception->getMessage();
+            return json_encode(['message' => $exception->getMessage(), 'data' => null]);
         }
-        if (Page::delete($id))
-            echo 'success';
-        else
-            echo 'error';
-        return true;
+        // echo instead return - to view data for tests
+//        echo json_encode(['message' => 'success']);
+        return json_encode(['message' => 'success']);
     }
 }

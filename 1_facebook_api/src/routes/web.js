@@ -1,6 +1,6 @@
 import express from "express";
-import homepageController from "../controllers/homepageController";
-import chatBotController from "../controllers/chatBotController";
+import * as homepageController from "../controllers/homepageController";
+import * as chatBotController from "../controllers/chatBotController";
 
 const router = express.Router();
 
@@ -11,5 +11,4 @@ const initWebRoutes = (app)=> {
 
     return app.use("/", router);
 };
-
-module.exports = initWebRoutes;
+export default initWebRoutes
