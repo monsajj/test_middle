@@ -35,9 +35,9 @@ class Bootstrap
             $controller = new $controllerName();
             $controller->index();
 //            $controller->createPage([true, 'title', 'description']);
-//            $controller->getPage(1);
-//            $controller->updatePage(5, [true, 'update title', 'update description']);
-//            $controller->deletePage(11);
+//            $controller->get(23);
+//            $controller->updatePage(23, [true, 'update title', 'update description']);
+//            $controller->deletePage(23);
         }
 
         //Error404 page
